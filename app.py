@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template, send_file
 import io
 from fpdf import FPDF
 app = Flask(__name__)
-port = process.env.PORT || 4000;
 
 @app.route('/')
 def index():
