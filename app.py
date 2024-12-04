@@ -79,6 +79,8 @@ def download_pdf():
 
     pdf = FPDF()
     pdf.add_page()
+    logo_path = "/Users/sawarn/Developer/AI:ML /Chat Bot test/logo.png"  # Replace with the actual path to your logo
+    pdf.image(logo_path, x=10, y=8, w=30)  # Adjust the size and position as needed
     pdf.set_font("Arial", style='B', size=16)
     pdf.cell(0, 10, txt="Blood Cancer Risk Assessment Results", ln=True, align='C')
     pdf.ln(20)
@@ -88,7 +90,6 @@ def download_pdf():
     pdf.cell(0, 10, txt=f"Name: {user_details.get('name', 'N/A')}", ln=True)
     pdf.cell(0, 10, txt=f"Email: {user_details.get('email', 'N/A')}", ln=True)
     pdf.cell(0, 10, txt=f"Phone: {user_details.get('phone', 'N/A')}", ln=True)
-    pdf.cell(0, 10, txt=f"Risk Level: {user_details.get('risk_level', 'N/A')}", ln=True)
 
     risk_level = user_details.get('risk_level', 'N/A')
     color_map = {"Low": (0, 255, 0), "Moderate": (255, 255, 0), "High": (255, 0, 0)}
