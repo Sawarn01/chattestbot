@@ -79,7 +79,7 @@ def download_pdf():
 
     pdf = FPDF()
     pdf.add_page()
-    logo_path = "/Users/sawarn/Developer/AI:ML /Chat Bot test/logo.png"  # Replace with the actual path to your logo
+    logo_path = "https://i.ibb.co/R3FWq3y/logo.png"  # Replace with the actual path to your logo
     pdf.image(logo_path, x=10, y=8, w=30)  # Adjust the size and position as needed
     pdf.set_font("Arial", style='B', size=16)
     pdf.cell(0, 10, txt="Blood Cancer Risk Assessment Results", ln=True, align='C')
