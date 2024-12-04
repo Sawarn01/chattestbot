@@ -77,44 +77,22 @@ def download_pdf():
         app.logger.error("No user details available for PDF generation.")
         return "No data available to generate PDF. Please complete the assessment first.", 400
 
-    app.logger.info(f"Generating PDF for: {user_details}")
-
     pdf = FPDF()
     pdf.add_page()
-
-    # Add company logo
-    logo_path = "/Users/sawarn/Developer/AI:ML /Chat Bot test/logo.png"  # Replace with the actual path to your logo
-    pdf.image(logo_path, x=10, y=8, w=30)  # Adjust the size and position as needed
     pdf.set_font("Arial", style='B', size=16)
     pdf.cell(0, 10, txt="Blood Cancer Risk Assessment Results", ln=True, align='C')
-    pdf.ln(20)
+    pdf.ln(10)
 
     pdf.set_font("Arial", size=12)
-
-    # Add user details
     pdf.cell(0, 10, txt=f"Name: {user_details.get('name', 'N/A')}", ln=True)
     pdf.cell(0, 10, txt=f"Email: {user_details.get('email', 'N/A')}", ln=True)
     pdf.cell(0, 10, txt=f"Phone: {user_details.get('phone', 'N/A')}", ln=True)
+    pdf.cell(0, 10, txt=f"Risk Level: {user_details.get('risk_level', 'N/A')}", ln=True)
 
-    # Add risk level with color
-    risk_level = user_details.get('risk_level', 'N/A')
-    color_map = {"Low": (0, 255, 0), "Moderate": (255, 255, 0), "High": (255, 0, 0)}
-    color = color_map.get(risk_level, (0, 0, 0))  # Default to black if unknown
-    pdf.set_text_color(*color)
-    pdf.cell(0, 10, txt=f"Risk Level: {risk_level}", ln=True)
-    pdf.set_text_color(0, 0, 0)  # Reset to black
-
-    # Footer or additional notes
-    pdf.ln(10)
-    pdf.cell(0, 10, txt="This assessment is not a definitive diagnosis. Please consult a healthcare professional.", ln=True, align='C')
-
-    # Save and send the PDF
     pdf_output = io.BytesIO()
     pdf_data = pdf.output(dest='S').encode('latin1')
     pdf_output.write(pdf_data)
     pdf_output.seek(0)
-
-    app.logger.info(f"PDF Size: {pdf_output.getbuffer().nbytes} bytes")
 
     return send_file(
         pdf_output,
@@ -122,7 +100,6 @@ def download_pdf():
         download_name="risk_assessment_results.pdf",
         mimetype="application/pdf"
     )
-
 
 
 
