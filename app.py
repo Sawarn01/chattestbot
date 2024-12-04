@@ -1,7 +1,10 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, session
 import io
 from fpdf import FPDF
 app = Flask(__name__)
+
+app = Flask(__name__)
+app.secret_key = "badjnidwne1iebwnd"  # Replace with a secure, random value
 
 import os
 
@@ -21,35 +24,32 @@ def submit():
         "name": data.get("name"),
         "email": data.get("email"),
         "phone": data.get("phone"),
+        "risk_level": "Low"  # Default value or calculated risk level
     }
-    responses = {k: v for k, v in data.items() if k.startswith("q")}
-    
-    # Risk calculation logic remains the same...
+    # Risk calculation logic here...
     risk_score = 0
-    # Add to the risk_score based on responses as before...
-
-    # Determine risk level
+    # Determine risk level based on risk_score...
     if risk_score <= 3:
-        risk_level = {"level": "Low", "color": "green"}
+        user_details["risk_level"] = "Low"
     elif 4 <= risk_score <= 6:
-        risk_level = {"level": "Moderate", "color": "yellow"}
+        user_details["risk_level"] = "Moderate"
     else:
-        risk_level = {"level": "High", "color": "red"}
+        user_details["risk_level"] = "High"
 
-    user_details["risk_level"] = risk_level["level"]
-    
-    # Debugging: Log user details
-    app.logger.info(f"User Details: {user_details}")
-    
-    app.user_details = user_details
+    # Store in session
+    session['user_details'] = user_details
 
-    return jsonify(risk_level)
+    return jsonify({"level": user_details["risk_level"]})
+
 
 @app.route('/download', methods=['GET'])
 def download():
-    user_details = app.user_details
+    user_details = session.get('user_details')
 
-    # Generate downloadable result
+    if not user_details:
+        app.logger.error("No user details available for text file download.")
+        return "No data available to download. Please complete the assessment first.", 400
+
     output = io.StringIO()
     output.write("Blood Cancer Risk Assessment Results\n\n")
     output.write(f"Name: {user_details['name']}\n")
@@ -64,6 +64,7 @@ def download():
         download_name="risk_assessment_results.txt",
         mimetype="text/plain"
     )
+
 
 
     
