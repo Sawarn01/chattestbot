@@ -1,4 +1,3 @@
 Flask
 fpdf
 gunicorn
-session
