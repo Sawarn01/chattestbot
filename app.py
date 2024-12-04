@@ -71,7 +71,7 @@ def download():
 
 @app.route('/download-pdf', methods=['GET'])
 def download_pdf():
-    user_details = getattr(app, 'user_details', None)
+    user_details = session.get('user_details')
 
     if not user_details:
         app.logger.error("No user details available for PDF generation.")
