@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Cancer Risk Assessment</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Blood Cancer Risk Assessment</h1>
+
+        <!-- User Details Form -->
+        <form id="user-form">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <input type="text" id="name" class="form-control" placeholder="Enter your name" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            <div class="mb-3">
+                <label for="phone" class="form-label">Phone Number:</label>
+                <input type="tel" id="phone" class="form-control" placeholder="Enter your phone number" required>
+            </div>
+            <button type="button" id="start" class="btn btn-primary">Start Assessment</button>
+        </form>
+
+        <!-- Question Section -->
+        <div id="questions" class="mt-4 d-none">
+            <p id="question-text" class="h5"></p>
+            <div id="options" class="mt-3"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="result" class="mt-4 d-none">
+            <h2>Your Risk Level: <span id="risk-level"></span></h2>
+            <h3 class="mt-3">Your Details:</h3>
+            <p><strong>Name:</strong> <span id="user-name"></span></p>
+            <p><strong>Email:</strong> <span id="user-email"></span></p>
+            <p><strong>Phone:</strong> <span id="user-phone"></span></p>
+            <a id="download-link" class="btn btn-success mt-3" href="/download">Download Results (Text)</a>
+            <a id="download-pdf-link" class="btn btn-primary mt-3" href="/download-pdf">Download Results (PDF)</a>
+        </div>
+        
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Questions data from the backend
+        const questions = [
+            {"id": "q1", "text": "Does anyone in your family have blood cancer?", "options": ["Yes", "No", "Not Sure"]},
+            {"id": "q2", "text": "Do you smoke?", "options": ["Yes", "No", "Occasionally"]},
+            {"id": "q3", "text": "Have you done any test related to cancer?", "options": ["Yes", "No"]},
+            {"id": "q4", "text": "Does anyone in your family have any type of cancer?", "options": ["Yes", "No", "Not Sure"]},
+            {"id": "q5", "text": "Do you have any type of cancer?", "options": ["Yes", "No"]},
+            {"id": "q6", "text": "Do you have any symptoms like unexplained weight loss, fatigue, or fever?", "options": ["Yes", "No"]},
+            {"id": "q7", "text": "What is your age?", "options": ["Under 30", "30-50", "Over 50"]},
+            {"id": "q8", "text": "Do you have a history of autoimmune diseases?", "options": ["Yes", "No"]},
+            {"id": "q9", "text": "Have you been exposed to toxic chemicals or radiation?", "options": ["Yes", "No"]}
+        ];
+    
+        let currentQuestion = 0;
+        const userResponses = {};
+        const userDetails = {};
+    
+        // Start Assessment
+        $('#start').click(() => {
+            const name = $('#name').val();
+            const email = $('#email').val();
+            const phone = $('#phone').val();
+    
+            if (!name || !email || !phone) {
+                alert("Please fill out all details!");
+                return;
+            }
+    
+            userDetails.name = name;
+            userDetails.email = email;
+            userDetails.phone = phone;
+    
+            $('#user-form').addClass('d-none');
+            showQuestion();
+        });
+    
+        // Show Questions
+        function showQuestion() {
+            if (currentQuestion < questions.length) {
+                const question = questions[currentQuestion];
+                $('#question-text').text(question.text);
+                $('#options').empty();
+                question.options.forEach(option => {
+                    $('#options').append(`
+                        <button class="btn btn-outline-secondary m-1 option-btn" data-value="${option}">${option}</button>
+                    `);
+                });
+                $('#questions').removeClass('d-none');
+            } else {
+                submitResponses();
+            }
+        }
+    
+        // Handle Option Click
+        $(document).on('click', '.option-btn', function() {
+            const value = $(this).data('value');
+            userResponses[questions[currentQuestion].id] = value;
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                submitResponses();
+            }
+        });
+    
+        // Submit Responses
+        function submitResponses() {
+            const payload = { ...userResponses, ...userDetails };
+            $.ajax({
+                url: '/submit',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(result) {
+                    $('#questions').addClass('d-none');
+    
+                    // Display Results
+                    $('#risk-level').text(result.level).css('color', result.color);
+                    $('#user-name').text(userDetails.name);
+                    $('#user-email').text(userDetails.email);
+                    $('#user-phone').text(userDetails.phone);
+                    $('#result').removeClass('d-none');
+                },
+                error: function(err) {
+                    alert('Something went wrong while submitting your responses. Please try again.');
+                }
+            });
+        }
+    </script>
+    
+</body>
+</html>
