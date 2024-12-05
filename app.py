@@ -11,7 +11,7 @@ db = SQLAlchemy()
 app = Flask(__name__)
 
 # Configure the app to use PostgreSQL via DATABASE_URL environment variable
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')  # Automatically provided by Render
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('postgresql://chatbotdbtest_user:ZEcB6qbSM6dkNFpSnbKynEI8Y92sj9Xm@dpg-ct8mfqaj1k6c73e8i1mg-a.oregon-postgres.render.com/chatbotdbtest')  # Automatically provided by Render
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = "your_secret_key"  # Replace with a real secret key for production
 
