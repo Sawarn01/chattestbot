@@ -61,6 +61,25 @@ def submit():
         "risk_score": risk_score
     }).execute()
 
+    try:
+        # Get the JSON data from the request
+        data = request.get_json()
+        
+        # Example: process the data (you can save it to the database here)
+        name = data.get("name")
+        email = data.get("email")
+        phone = data.get("phone")
+        risk_level = data.get("risk_level")
+        risk_score = data.get("risk_score")
+
+        # Here, you can process the data or store it in the database
+
+        # For now, return a success message
+        return jsonify({"message": "Form submitted successfully!"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
     if response.status_code == 201:
         session['user_id'] = response.data[0]['id']
         color_map = {"Low": "green", "Moderate": "yellow", "High": "red"}
