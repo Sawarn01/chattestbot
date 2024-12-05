@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 fpdf
 gunicorn
 psycopg2-binary
+supabase
