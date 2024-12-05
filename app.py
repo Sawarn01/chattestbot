@@ -1,7 +1,19 @@
 from flask import Flask, request, jsonify, render_template, send_file, session
 import io
+from flask_sqlalchemy import SQLAlchemy
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Configure SQLite database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cancer_risk.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize the database
+db = SQLAlchemy(app)
 from fpdf import FPDF
 app = Flask(__name__)
+
 
 app = Flask(__name__)
 app.secret_key = "badjnidwne1iebwnd"  # Replace with a secure, random value
@@ -13,6 +25,20 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port)
 
 
+class UserRiskAssessment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    risk_level = db.Column(db.String(20), nullable=False)
+    risk_score = db.Column(db.Integer, nullable=False)
+
+# Create the database tables
+with app.app_context():
+    db.create_all()
+
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -22,7 +48,7 @@ def submit():
     data = request.json
     risk_score = 0
 
-    # Example risk scoring logic
+    # Risk scoring logic
     if data.get("q1") == "Yes":
         risk_score += 2
     if data.get("q2") == "Yes":
@@ -52,18 +78,35 @@ def submit():
     else:
         risk_level = "High"
 
-    user_details = {
-        "name": data.get("name"),
-        "email": data.get("email"),
-        "phone": data.get("phone"),
-        "risk_level": risk_level
-    }
+    # Save user details and risk assessment to the database
+    user = UserRiskAssessment(
+        name=data.get("name"),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        risk_level=risk_level,
+        risk_score=risk_score
+    )
+    db.session.add(user)
+    db.session.commit()
 
-    session['user_details'] = user_details
-
-    # Optional: Add a color code for frontend display
+    # Response for the frontend
     color_map = {"Low": "green", "Moderate": "yellow", "High": "red"}
     return jsonify({"level": risk_level, "color": color_map[risk_level]})
+
+@app.route('/results', methods=['GET'])
+def get_results():
+    users = UserRiskAssessment.query.all()
+    results = [
+        {
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "risk_level": user.risk_level,
+            "risk_score": user.risk_score,
+        }
+        for user in users
+    ]
+    return jsonify(results)
 
 
 @app.route('/download', methods=['GET'])
