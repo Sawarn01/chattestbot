@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify, session, render_template, send_file
+from flask import Flask, request, jsonify, session, render_template, send_file, Response
 from flask_sqlalchemy import SQLAlchemy
 from fpdf import FPDF
-import io
 import os
+import io
 
 # Initialize SQLAlchemy globally
 db = SQLAlchemy()
@@ -10,10 +10,10 @@ db = SQLAlchemy()
 # Create Flask app
 app = Flask(__name__)
 
-# Configure the app
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cancer_risk.db'
+# Configure the app to use PostgreSQL via DATABASE_URL environment variable
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('postgresql://chatbotdbtest_user:ZEcB6qbSM6dkNFpSnbKynEI8Y92sj9Xm@dpg-ct8mfqaj1k6c73e8i1mg-a/chatbotdbtest')  # Automatically provided by Render
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = "your_secret_key"
+app.secret_key = "your_secret_key"  # Replace with a real secret key for production
 
 # Initialize SQLAlchemy with the app
 db.init_app(app)
@@ -123,6 +123,22 @@ def download_pdf():
         as_attachment=True,
         download_name="risk_assessment_results.pdf",
         mimetype="application/pdf"
+    )
+
+@app.route('/export-data', methods=['GET'])
+def export_data():
+    users = UserRiskAssessment.query.all()
+
+    def generate_csv():
+        data = "Name,Email,Phone,Risk Level,Risk Score\n"
+        for user in users:
+            data += f"{user.name},{user.email},{user.phone},{user.risk_level},{user.risk_score}\n"
+        return data
+
+    return Response(
+        generate_csv(),
+        mimetype='text/csv',
+        headers={"Content-Disposition": "attachment;filename=export.csv"}
     )
 
 if __name__ == "__main__":
