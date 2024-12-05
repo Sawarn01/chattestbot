@@ -1,4 +1,4 @@
 Flask
+Flask-SQLAlchemy
 fpdf
 gunicorn
-flask_sqlalchemy
