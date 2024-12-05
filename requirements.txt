@@ -2,3 +2,4 @@ Flask
 Flask-SQLAlchemy
 fpdf
 gunicorn
+psycopg2-binary
