@@ -20,26 +20,50 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     data = request.json
+    risk_score = 0
+
+    # Example risk scoring logic
+    if data.get("q1") == "Yes":
+        risk_score += 2
+    if data.get("q2") == "Yes":
+        risk_score += 1
+    if data.get("q3") == "Yes":
+        risk_score += 1
+    if data.get("q4") == "Yes":
+        risk_score += 2
+    if data.get("q5") == "Yes":
+        risk_score += 3
+    if data.get("q6") == "Yes":
+        risk_score += 2
+    if data.get("q7") == "30-50":
+        risk_score += 1
+    elif data.get("q7") == "Over 50":
+        risk_score += 2
+    if data.get("q8") == "Yes":
+        risk_score += 2
+    if data.get("q9") == "Yes":
+        risk_score += 2
+
+    # Determine risk level
+    if risk_score <= 3:
+        risk_level = "Low"
+    elif 4 <= risk_score <= 6:
+        risk_level = "Moderate"
+    else:
+        risk_level = "High"
+
     user_details = {
         "name": data.get("name"),
         "email": data.get("email"),
         "phone": data.get("phone"),
-        "risk_level": "Low"  # Default value or calculated risk level
+        "risk_level": risk_level
     }
-    # Risk calculation logic here...
-    risk_score = 0
-    # Determine risk level based on risk_score...
-    if risk_score <= 3:
-        user_details["risk_level"] = "Low"
-    elif 4 <= risk_score <= 6:
-        user_details["risk_level"] = "Moderate"
-    else:
-        user_details["risk_level"] = "High"
 
-    # Store in session
     session['user_details'] = user_details
 
-    return jsonify({"level": user_details["risk_level"]})
+    # Optional: Add a color code for frontend display
+    color_map = {"Low": "green", "Moderate": "yellow", "High": "red"}
+    return jsonify({"level": risk_level, "color": color_map[risk_level]})
 
 
 @app.route('/download', methods=['GET'])
