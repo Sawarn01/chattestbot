@@ -1,38 +1,17 @@
 from flask import Flask, request, jsonify, session, render_template, send_file, Response
-from flask_sqlalchemy import SQLAlchemy
 from fpdf import FPDF
+from supabase import create_client, Client
 import os
 import io
 
-# Initialize SQLAlchemy globally
-db = SQLAlchemy()
-
-# Create Flask app
+# Flask app setup
 app = Flask(__name__)
+app.secret_key = "ZEcB6qbSM6dkNFpSnbKynEI8Y92sj9Xm@dpg-ct8mfqaj1k6c73e8i1mg-a"
 
-# Configure the app to use your PostgreSQL database
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://chatbotdbtest_user:ZEcB6qbSM6dkNFpSnbKynEI8Y92sj9Xm@dpg-ct8mfqaj1k6c73e8i1mg-a:5432/chatbotdbtest"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Set the secret key for the application
-app.secret_key = os.environ.get("SECRET_KEY")
-
-
-# Initialize SQLAlchemy with the app
-db.init_app(app)
-
-# Define the database model
-class UserRiskAssessment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
-    risk_level = db.Column(db.String(20), nullable=False)
-    risk_score = db.Column(db.Integer, nullable=False)
-
-# Create the database within the app context
-with app.app_context():
-    db.create_all()
+# Supabase configuration
+SUPABASE_URL = "https://konguabcywwajjjsgzwx.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvbmd1YWJjeXd3YWpqanNnend4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMzOTIyNTEsImV4cCI6MjA0ODk2ODI1MX0.ImsMYqqxrLojCSP_uJvHOWUbrcoOOT9OHm5_ZvlXZ5g"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
 def index():
@@ -73,23 +52,21 @@ def submit():
     else:
         risk_level = "High"
 
-    # Save user details and risk assessment to the database
-    user = UserRiskAssessment(
-        name=data.get("name"),
-        email=data.get("email"),
-        phone=data.get("phone"),
-        risk_level=risk_level,
-        risk_score=risk_score
-    )
-    db.session.add(user)
-    db.session.commit()
+    # Save user details and risk assessment to Supabase
+    response = supabase.table("user_risk_assessment").insert({
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "phone": data.get("phone"),
+        "risk_level": risk_level,
+        "risk_score": risk_score
+    }).execute()
 
-    # Store user ID in session for PDF download
-    session['user_id'] = user.id
-
-    # Response for the frontend
-    color_map = {"Low": "green", "Moderate": "yellow", "High": "red"}
-    return jsonify({"level": risk_level, "color": color_map[risk_level]})
+    if response.status_code == 201:
+        session['user_id'] = response.data[0]['id']
+        color_map = {"Low": "green", "Moderate": "yellow", "High": "red"}
+        return jsonify({"level": risk_level, "color": color_map[risk_level]})
+    else:
+        return jsonify({"error": "Failed to save data"}), 500
 
 @app.route('/download-pdf', methods=['GET'])
 def download_pdf():
@@ -97,9 +74,11 @@ def download_pdf():
     if not user_id:
         return "No data available to generate PDF. Please complete the assessment first.", 400
 
-    user = UserRiskAssessment.query.get(user_id)
-    if not user:
+    response = supabase.table("user_risk_assessment").select("*").eq("id", user_id).execute()
+    if response.status_code != 200 or len(response.data) == 0:
         return "User not found.", 404
+
+    user = response.data[0]
 
     pdf = FPDF()
     pdf.add_page()
@@ -108,10 +87,10 @@ def download_pdf():
     pdf.ln(20)
 
     pdf.set_font("Arial", size=12)
-    pdf.cell(0, 10, txt=f"Name: {user.name}", ln=True)
-    pdf.cell(0, 10, txt=f"Email: {user.email}", ln=True)
-    pdf.cell(0, 10, txt=f"Phone: {user.phone}", ln=True)
-    pdf.cell(0, 10, txt=f"Risk Level: {user.risk_level}", ln=True)
+    pdf.cell(0, 10, txt=f"Name: {user['name']}", ln=True)
+    pdf.cell(0, 10, txt=f"Email: {user['email']}", ln=True)
+    pdf.cell(0, 10, txt=f"Phone: {user['phone']}", ln=True)
+    pdf.cell(0, 10, txt=f"Risk Level: {user['risk_level']}", ln=True)
 
     pdf.ln(10)
     pdf.cell(0, 10, txt="This assessment is not a definitive diagnosis. Please consult a healthcare professional.", ln=True, align='C')
@@ -126,22 +105,6 @@ def download_pdf():
         as_attachment=True,
         download_name="risk_assessment_results.pdf",
         mimetype="application/pdf"
-    )
-
-@app.route('/export-data', methods=['GET'])
-def export_data():
-    users = UserRiskAssessment.query.all()
-
-    def generate_csv():
-        data = "Name,Email,Phone,Risk Level,Risk Score\n"
-        for user in users:
-            data += f"{user.name},{user.email},{user.phone},{user.risk_level},{user.risk_score}\n"
-        return data
-
-    return Response(
-        generate_csv(),
-        mimetype='text/csv',
-        headers={"Content-Disposition": "attachment;filename=export.csv"}
     )
 
 if __name__ == "__main__":
